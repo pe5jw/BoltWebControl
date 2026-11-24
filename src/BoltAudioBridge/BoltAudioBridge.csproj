@@ -3,14 +3,15 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace>BoltAudioBridge</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <!-- WebRTC server-side peer -->
+    <!-- WebRTC + SIP/RTP stack -->
     <PackageReference Include="SIPSorcery" Version="6.*" />
-    <!-- Audio I/O: miniaudio bindings voor Win/Linux/macOS -->
+    <!-- SIPSorcery media abstractions (IAudioSource, IAudioSink, AudioEncoder) -->
+    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.*" />
+    <!-- Audio I/O: miniaudio bindings voor Win + Linux, geen externe deps -->
     <PackageReference Include="Hexa.NET.MiniAudio" Version="*" />
-    <!-- SignalR voor WebRTC signaling -->
-    <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="*" />
   </ItemGroup>
 </Project>

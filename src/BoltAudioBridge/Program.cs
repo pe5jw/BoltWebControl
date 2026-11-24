@@ -11,7 +11,11 @@ var app = builder.Build();
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
-app.MapSignalR<AudioHub>("/hub/audio");
+
+// SignalR hub voor WebRTC signaling
+app.MapHub<AudioHub>("/hub/audio");
+
+// REST: server-kant audio devices ophalen
 app.MapGet("/api/audio/devices", (AudioDeviceService svc) => svc.GetDevices());
 
 app.Run();
