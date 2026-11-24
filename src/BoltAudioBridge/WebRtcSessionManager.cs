@@ -57,7 +57,7 @@ public class WebRtcSessionManager(
                 AudioSamplingRatesEnum.Rate48KHz, 480, pcm);
         };
 
-        // ── SIPSorcery audio sink: ontvangt PCM van browser → soundcard ──
+        // ── WebRTC peer connection ────────────────────────────────────
         var peerConn = new RTCPeerConnection(new RTCConfiguration
         {
             // Geen STUN/TURN nodig: BoltTunnel zorgt voor de tunnel
@@ -69,12 +69,13 @@ public class WebRtcSessionManager(
             MediaStreamStatusEnum.SendRecv);
         peerConn.addTrack(audioTrack);
 
-        // Browser audio (mic) aankomstt → soundcard TX
+        // Browser audio (mic) aankomt → soundcard TX
         peerConn.OnRtpPacketReceived += (_, media, pkt) =>
         {
             if (media != SDPMediaTypesEnum.audio) return;
-            var decoded = audioEncoder.DecodeAudio(pkt.Payload, AudioFormat.FormatOpus);
-            if (decoded is not null)
+            // AudioFormat.OpusWebRTC = payload type 111, 48kHz, 2ch, useinbandfec=1
+            var decoded = audioEncoder.DecodeAudio(pkt.Payload, AudioFormat.OpusWebRTC);
+            if (decoded is { Length: > 0 })
                 audio.SendPlaybackFrame(decoded);
         };
 
@@ -97,9 +98,8 @@ public class WebRtcSessionManager(
         };
 
         // SDP offer verwerken
-        var offer = SdpType.offer;
         peerConn.setRemoteDescription(new RTCSessionDescriptionInit
-            { type = offer, sdp = offerSdp });
+            { type = SdpType.offer, sdp = offerSdp });
 
         await audioSource.StartAudio();
 

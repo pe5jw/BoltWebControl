@@ -7,11 +7,12 @@ namespace BoltAudioBridge;
 /// Enumerates audio devices via miniaudio ma_context_get_devices.
 /// Werkt op Windows (WASAPI/WinMM) en Linux (ALSA/PulseAudio) — geen externe dependencies.
 /// </summary>
-public class AudioDeviceService : IDisposable
+public sealed class AudioDeviceService : IDisposable
 {
     private readonly ILogger<AudioDeviceService> _log;
-    private unsafe ma_context* _ctx;
     private bool _disposed;
+    private MaContext _ctx;
+    private bool _ctxOk;
 
     public AudioDeviceService(ILogger<AudioDeviceService> log)
     {
@@ -21,30 +22,36 @@ public class AudioDeviceService : IDisposable
 
     private unsafe void InitContext()
     {
-        _ctx = (ma_context*)NativeMemory.AllocZeroed((nuint)sizeof(ma_context));
-        var result = MiniAudio.ma_context_init(null, 0, null, _ctx);
-        if (result != ma_result.MA_SUCCESS)
+        // ContextInit(MaBackend* backends, uint backendCount, MaContextConfigPtr pConfig, ref MaContext pContext)
+        // Geef null/0 door voor automatische backend-selectie
+        var result = MiniAudio.ContextInit((MaBackend*)null, 0, MaContextConfigPtr.Null, ref _ctx);
+        if (result != MaResult.Success)
         {
             _log.LogWarning("ma_context_init mislukt ({R}) — device enumeration niet beschikbaar", result);
-            NativeMemory.Free(_ctx);
-            _ctx = null;
+            _ctxOk = false;
+        }
+        else
+        {
+            _ctxOk = true;
         }
     }
 
     public unsafe AudioDevices GetDevices()
     {
-        if (_ctx == null)
+        if (!_ctxOk)
             return Fallback();
 
-        ma_device_info* pPlayback; uint playCount;
-        ma_device_info* pCapture;  uint captureCount;
+        MaDeviceInfo* pPlayback = null;
+        uint playCount = 0;
+        MaDeviceInfo* pCapture = null;
+        uint captureCount = 0;
 
-        var result = MiniAudio.ma_context_get_devices(
-            _ctx,
-            &pPlayback, &playCount,
-            &pCapture,  &captureCount);
+        var result = MiniAudio.ContextGetDevices(
+            ref _ctx,
+            new MaDeviceInfoPtrPtr(&pPlayback), &playCount,
+            new MaDeviceInfoPtrPtr(&pCapture),  &captureCount);
 
-        if (result != ma_result.MA_SUCCESS)
+        if (result != MaResult.Success)
         {
             _log.LogWarning("ma_context_get_devices mislukt ({R})", result);
             return Fallback();
@@ -55,20 +62,20 @@ public class AudioDeviceService : IDisposable
 
         for (uint i = 0; i < captureCount; i++)
         {
-            var info = pCapture[i];
+            ref var info = ref pCapture[i];
             inputs.Add(new AudioDeviceInfo(
-                Id:        DeviceIdToString(info.id),
-                Name:      NameFromBytes(info.name),
-                IsDefault: info.isDefault != 0));
+                Id:        DeviceIdToString(&info),
+                Name:      NameFromInfo(&info),
+                IsDefault: info.IsDefault != 0));
         }
 
         for (uint i = 0; i < playCount; i++)
         {
-            var info = pPlayback[i];
+            ref var info = ref pPlayback[i];
             outputs.Add(new AudioDeviceInfo(
-                Id:        DeviceIdToString(info.id),
-                Name:      NameFromBytes(info.name),
-                IsDefault: info.isDefault != 0));
+                Id:        DeviceIdToString(&info),
+                Name:      NameFromInfo(&info),
+                IsDefault: info.IsDefault != 0));
         }
 
         return new AudioDevices(inputs, outputs);
@@ -76,17 +83,20 @@ public class AudioDeviceService : IDisposable
 
     // ── helpers ───────────────────────────────────────────────────────
 
-    private static unsafe string NameFromBytes(fixed byte name[256])
+    /// <summary>
+    /// Leest de naam uit MaDeviceInfo.
+    /// MaDeviceInfo heeft Name_0..Name_255 als losse bytes in het struct-layout.
+    /// </summary>
+    private static unsafe string NameFromInfo(MaDeviceInfo* info)
     {
-        // Hexa.NET geeft naam als fixed byte array
-        fixed (byte* p = name)
-            return Marshal.PtrToStringUTF8((IntPtr)p) ?? "Unknown";
+        byte* namePtr = &info->Name_0;
+        return Marshal.PtrToStringUTF8((IntPtr)namePtr) ?? "Unknown";
     }
 
-    private static unsafe string DeviceIdToString(ma_device_id id)
+    private static unsafe string DeviceIdToString(MaDeviceInfo* info)
     {
-        // Gebruik het eerste stuk van de union als hex fingerprint
-        var bytes = new ReadOnlySpan<byte>(&id, 4);
+        // MaDeviceId is een union van 256 bytes; neem de eerste 4 als hex fingerprint
+        var bytes = new ReadOnlySpan<byte>(&info->Id, 4);
         return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 
@@ -94,15 +104,14 @@ public class AudioDeviceService : IDisposable
         [new("default", "Default Input",  true)],
         [new("default", "Default Output", true)]);
 
-    public unsafe void Dispose()
+    public void Dispose()
     {
         if (_disposed) return;
         _disposed = true;
-        if (_ctx != null)
+        if (_ctxOk)
         {
-            MiniAudio.ma_context_uninit(_ctx);
-            NativeMemory.Free(_ctx);
-            _ctx = null;
+            MiniAudio.ContextUninit(ref _ctx);
+            _ctxOk = false;
         }
     }
 }

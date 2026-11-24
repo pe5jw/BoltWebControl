@@ -26,9 +26,10 @@ public sealed unsafe class MiniAudioDevice : IDisposable
     public const int FramesPerBuf = 480;    // 10 ms @ 48 kHz
 
     // ── interne staat ─────────────────────────────────────────────────
-    private ma_device  _device;
+    private MaDevice   _device;
     private GCHandle   _selfHandle;
     private readonly PcmRingBuffer _txRing = new(SampleRate * 2); // 2s buffer
+    private bool _started;
     private bool _disposed;
 
     // ── init / teardown ───────────────────────────────────────────────
@@ -36,47 +37,51 @@ public sealed unsafe class MiniAudioDevice : IDisposable
     {
         _selfHandle = GCHandle.Alloc(this);
 
-        var cfg = MiniAudio.ma_device_config_init(ma_device_type.ma_device_type_duplex);
-        cfg.capture.format    = ma_format.ma_format_s16;
-        cfg.capture.channels  = Channels;
-        cfg.playback.format   = ma_format.ma_format_s16;
-        cfg.playback.channels = Channels;
-        cfg.sampleRate        = SampleRate;
-        cfg.periodSizeInFrames = FramesPerBuf;
-        cfg.dataCallback      = &DataCallback;
-        cfg.pUserData         = (void*)GCHandle.ToIntPtr(_selfHandle);
+        // DeviceConfigInit geeft een MaDeviceConfig terug (by value)
+        var cfg = MiniAudio.DeviceConfigInit(MaDeviceType.Duplex);
+        cfg.Capture.Format    = MaFormat.S16;
+        cfg.Capture.Channels  = Channels;
+        cfg.Playback.Format   = MaFormat.S16;
+        cfg.Playback.Channels = Channels;
+        cfg.SampleRate        = SampleRate;
+        cfg.PeriodSizeInFrames = FramesPerBuf;
+        cfg.DataCallback      = (void*)(delegate*<MaDevice*, void*, void*, uint, void>)&DataCallback;
+        cfg.PUserData         = (void*)GCHandle.ToIntPtr(_selfHandle);
 
-        // Device ID opzoeken op naam (null = default)
-        // TODO: ma_context_get_devices + naam match voor niet-default devices
-        // Voor nu: default devices, namen worden genegeerd tenzij null
+        // TODO: device-id selectie op naam via ma_context_get_devices
+        // Voor nu: default capture/playback devices
 
-        fixed (ma_device* pDev = &_device)
+        var result = MiniAudio.DeviceInit((MaContextPtr)null, in cfg, ref _device);
+        if (result != MaResult.Success)
+            throw new InvalidOperationException($"ma_device_init mislukt: {result}");
+
+        result = MiniAudio.DeviceStart(ref _device);
+        if (result != MaResult.Success)
         {
-            var result = MiniAudio.ma_device_init(null, &cfg, pDev);
-            if (result != ma_result.MA_SUCCESS)
-                throw new InvalidOperationException($"ma_device_init mislukt: {result}");
-
-            MiniAudio.ma_device_start(pDev);
+            MiniAudio.DeviceUninit(ref _device);
+            throw new InvalidOperationException($"ma_device_start mislukt: {result}");
         }
+
+        _started = true;
     }
 
     public void Stop()
     {
-        fixed (ma_device* pDev = &_device)
-            MiniAudio.ma_device_uninit(pDev);
-
+        if (!_started) return;
+        _started = false;
+        MiniAudio.DeviceUninit(ref _device);
         if (_selfHandle.IsAllocated) _selfHandle.Free();
     }
 
     // ── miniaudio callback (realtime thread) ──────────────────────────
     [UnmanagedCallersOnly]
     private static void DataCallback(
-        ma_device* pDevice,
+        MaDevice* pDevice,
         void* pOutput,
         void* pInput,
         uint frameCount)
     {
-        var handle = GCHandle.FromIntPtr((IntPtr)pDevice->pUserData);
+        var handle = GCHandle.FromIntPtr((IntPtr)pDevice->PUserData);
         if (handle.Target is not MiniAudioDevice self) return;
 
         int samples = (int)frameCount * Channels;
