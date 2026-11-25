@@ -41,22 +41,21 @@ public sealed class AudioDeviceService : IDisposable
         if (!_ctxOk)
             return Fallback();
 
-        // Declareer pointers als lokale variabelen; gebruik fixed om het adres te nemen.
-        // MiniAudio.ContextGetDevices vult deze pointers in met adressen van intern geheugen.
+        // Declareer pointers als lokale (stack) variabelen.
+        // In een unsafe methode kan het adres van een stack-pointer direct worden genomen —
+        // geen fixed statement nodig (fixed is alleen voor managed heap objecten).
         MaDeviceInfo* pPlayback = null;
         uint playCount = 0;
         MaDeviceInfo* pCapture = null;
         uint captureCount = 0;
 
-        MaResult result;
-        fixed (MaDeviceInfo** ppPlayback = &pPlayback)
-        fixed (MaDeviceInfo** ppCapture  = &pCapture)
-        {
-            result = MiniAudio.ContextGetDevices(
-                ref _ctx,
-                new MaDeviceInfoPtrPtr(ppPlayback), &playCount,
-                new MaDeviceInfoPtrPtr(ppCapture),  &captureCount);
-        }
+        MaDeviceInfo** ppPlayback = &pPlayback;
+        MaDeviceInfo** ppCapture  = &pCapture;
+
+        var result = MiniAudio.ContextGetDevices(
+            ref _ctx,
+            new MaDeviceInfoPtrPtr(ppPlayback), &playCount,
+            new MaDeviceInfoPtrPtr(ppCapture),  &captureCount);
 
         if (result != MaResult.Success)
         {
@@ -69,20 +68,20 @@ public sealed class AudioDeviceService : IDisposable
 
         for (uint i = 0; i < captureCount; i++)
         {
-            ref var info = ref pCapture[i];
+            MaDeviceInfo* infoPtr = pCapture + i;
             inputs.Add(new AudioDeviceInfo(
-                Id:        DeviceIdToString(&info),
-                Name:      NameFromInfo(&info),
-                IsDefault: info.IsDefault != 0));
+                Id:        DeviceIdToString(infoPtr),
+                Name:      NameFromInfo(infoPtr),
+                IsDefault: infoPtr->IsDefault != 0));
         }
 
         for (uint i = 0; i < playCount; i++)
         {
-            ref var info = ref pPlayback[i];
+            MaDeviceInfo* infoPtr = pPlayback + i;
             outputs.Add(new AudioDeviceInfo(
-                Id:        DeviceIdToString(&info),
-                Name:      NameFromInfo(&info),
-                IsDefault: info.IsDefault != 0));
+                Id:        DeviceIdToString(infoPtr),
+                Name:      NameFromInfo(infoPtr),
+                IsDefault: infoPtr->IsDefault != 0));
         }
 
         return new AudioDevices(inputs, outputs);

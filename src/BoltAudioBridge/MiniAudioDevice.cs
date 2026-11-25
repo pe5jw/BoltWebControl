@@ -46,9 +46,8 @@ public sealed unsafe class MiniAudioDevice : IDisposable
         cfg.SampleRate         = SampleRate;
         cfg.PeriodSizeInFrames = FramesPerBuf;
 
-        // DataCallback: wijs de function pointer direct toe zonder tussenliggende (void*)-cast.
-        // Het veld type in MaDeviceConfig is delegate*<MaDevice*, void*, void*, uint, void>.
-        cfg.DataCallback = &DataCallback;
+        // DataCallback: het veld cfg.DataCallback is void* — cast de function pointer expliciet.
+        cfg.DataCallback = (void*)(delegate*<MaDevice*, void*, void*, uint, void>)&DataCallback;
 
         cfg.PUserData = (void*)GCHandle.ToIntPtr(_selfHandle);
 

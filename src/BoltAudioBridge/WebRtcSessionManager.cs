@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 using Microsoft.AspNetCore.SignalR;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
-using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Abstractions;
 using BoltAudioBridge.Hubs;
 
@@ -80,10 +79,12 @@ public class WebRtcSessionManager(
 
         // Browser audio (mic) aankomt → soundcard TX
         // Decodeer Opus naar PCM en stuur naar de soundcard.
+        // Gebruik het eerste formaat dat de encoder ondersteunt (Opus voor WebRTC).
+        var opusFormat = audioEncoder.SupportedFormats.First();
         peerConn.OnRtpPacketReceived += (_, media, pkt) =>
         {
             if (media != SDPMediaTypesEnum.audio) return;
-            var decoded = audioEncoder.DecodeAudio(pkt.Payload, AudioFormat.OpusWebRTC);
+            var decoded = audioEncoder.DecodeAudio(pkt.Payload, opusFormat);
             if (decoded is { Length: > 0 })
                 audio.SendPlaybackFrame(decoded);
         };
@@ -106,9 +107,9 @@ public class WebRtcSessionManager(
                 CloseSession(connectionId);
         };
 
-        // SDP offer verwerken — SdpType is in SIPSorcery.SIP.App
+        // SDP offer verwerken — RTCSdpType is in SIPSorcery.Net
         peerConn.setRemoteDescription(new RTCSessionDescriptionInit
-            { type = SdpType.offer, sdp = offerSdp });
+            { type = RTCSdpType.offer, sdp = offerSdp });
 
         await audioSource.StartAudio();
 
