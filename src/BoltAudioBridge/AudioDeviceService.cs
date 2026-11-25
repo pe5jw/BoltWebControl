@@ -41,15 +41,22 @@ public sealed class AudioDeviceService : IDisposable
         if (!_ctxOk)
             return Fallback();
 
+        // Declareer pointers als lokale variabelen; gebruik fixed om het adres te nemen.
+        // MiniAudio.ContextGetDevices vult deze pointers in met adressen van intern geheugen.
         MaDeviceInfo* pPlayback = null;
         uint playCount = 0;
         MaDeviceInfo* pCapture = null;
         uint captureCount = 0;
 
-        var result = MiniAudio.ContextGetDevices(
-            ref _ctx,
-            new MaDeviceInfoPtrPtr(&pPlayback), &playCount,
-            new MaDeviceInfoPtrPtr(&pCapture),  &captureCount);
+        MaResult result;
+        fixed (MaDeviceInfo** ppPlayback = &pPlayback)
+        fixed (MaDeviceInfo** ppCapture  = &pCapture)
+        {
+            result = MiniAudio.ContextGetDevices(
+                ref _ctx,
+                new MaDeviceInfoPtrPtr(ppPlayback), &playCount,
+                new MaDeviceInfoPtrPtr(ppCapture),  &captureCount);
+        }
 
         if (result != MaResult.Success)
         {

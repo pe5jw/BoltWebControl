@@ -21,9 +21,9 @@ public sealed unsafe class MiniAudioDevice : IDisposable
     public event Action<short[]>? OnCaptureFrame;
 
     // ── config ───────────────────────────────────────────────────────
-    public const int SampleRate   = 48000;
-    public const int Channels     = 1;      // mono voor radio
-    public const int FramesPerBuf = 480;    // 10 ms @ 48 kHz
+    public const int SampleRate    = 48000;
+    public const int Channels      = 1;      // mono voor radio
+    public const int FramesPerBuf  = 480;    // 10 ms @ 48 kHz
 
     // ── interne staat ─────────────────────────────────────────────────
     private MaDevice   _device;
@@ -39,14 +39,18 @@ public sealed unsafe class MiniAudioDevice : IDisposable
 
         // DeviceConfigInit geeft een MaDeviceConfig terug (by value)
         var cfg = MiniAudio.DeviceConfigInit(MaDeviceType.Duplex);
-        cfg.Capture.Format    = MaFormat.S16;
-        cfg.Capture.Channels  = Channels;
-        cfg.Playback.Format   = MaFormat.S16;
-        cfg.Playback.Channels = Channels;
-        cfg.SampleRate        = SampleRate;
+        cfg.Capture.Format     = MaFormat.S16;
+        cfg.Capture.Channels   = Channels;
+        cfg.Playback.Format    = MaFormat.S16;
+        cfg.Playback.Channels  = Channels;
+        cfg.SampleRate         = SampleRate;
         cfg.PeriodSizeInFrames = FramesPerBuf;
-        cfg.DataCallback      = (void*)(delegate*<MaDevice*, void*, void*, uint, void>)&DataCallback;
-        cfg.PUserData         = (void*)GCHandle.ToIntPtr(_selfHandle);
+
+        // DataCallback: wijs de function pointer direct toe zonder tussenliggende (void*)-cast.
+        // Het veld type in MaDeviceConfig is delegate*<MaDevice*, void*, void*, uint, void>.
+        cfg.DataCallback = &DataCallback;
+
+        cfg.PUserData = (void*)GCHandle.ToIntPtr(_selfHandle);
 
         // TODO: device-id selectie op naam via ma_context_get_devices
         // Voor nu: default capture/playback devices
@@ -77,9 +81,9 @@ public sealed unsafe class MiniAudioDevice : IDisposable
     [UnmanagedCallersOnly]
     private static void DataCallback(
         MaDevice* pDevice,
-        void* pOutput,
-        void* pInput,
-        uint frameCount)
+        void*     pOutput,
+        void*     pInput,
+        uint      frameCount)
     {
         var handle = GCHandle.FromIntPtr((IntPtr)pDevice->PUserData);
         if (handle.Target is not MiniAudioDevice self) return;

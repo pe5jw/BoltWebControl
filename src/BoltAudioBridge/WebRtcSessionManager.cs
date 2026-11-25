@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Microsoft.AspNetCore.SignalR;
 using SIPSorcery.Media;
 using SIPSorcery.Net;
+using SIPSorcery.SIP.App;
 using SIPSorceryMedia.Abstractions;
 using BoltAudioBridge.Hubs;
 
@@ -16,6 +17,10 @@ namespace BoltAudioBridge;
 ///   - één RTCPeerConnection (SIPSorcery)
 ///   - één MiniAudioDevice (duplex: capture + playback)
 ///   - AudioEncoder voor Opus (ingebouwd in SIPSorcery)
+///
+/// Miniaudio werkt op 48 kHz; SIPSorcery's ExternalAudioSourceRawSample
+/// accepteert Rate8KHz of Rate16KHz. We downsamplen 48→16 kHz (factor 3)
+/// vóór het doorgeven — simpele decimation, voldoende voor spraak.
 /// </summary>
 public class WebRtcSessionManager(
     ILogger<WebRtcSessionManager> log,
@@ -44,17 +49,21 @@ public class WebRtcSessionManager(
             captureDeviceName:  inputDeviceId  == "default" ? null : inputDeviceId,
             playbackDeviceName: outputDeviceId == "default" ? null : outputDeviceId);
 
-        // ── SIPSorcery audio source: levert PCM van soundcard aan WebRTC ──
+        // ── SIPSorcery audio source ───────────────────────────────────
+        // AudioSourcesEnum heeft geen ExternalInput; gebruik Silence als
+        // placeholder. ExternalAudioSourceRawSample werkt onafhankelijk.
         var audioEncoder = new AudioEncoder();
         var audioSource  = new AudioExtrasSource(audioEncoder,
-            new AudioSourceOptions { AudioSource = AudioSourcesEnum.ExternalInput });
+            new AudioSourceOptions { AudioSource = AudioSourcesEnum.Silence });
 
         // Koppel miniaudio capture → SIPSorcery external input
+        // SIPSorcery accepteert Rate8KHz of Rate16KHz.
+        // Miniaudio levert 48 kHz → downsample 3:1 naar 16 kHz.
         audio.OnCaptureFrame += pcm =>
         {
-            // SIPSorcery verwacht PCM als short[] @ 48 kHz mono
+            var pcm16 = Downsample3x(pcm);                    // 480 → 160 samples
             audioSource.ExternalAudioSourceRawSample(
-                AudioSamplingRatesEnum.Rate48KHz, 480, pcm);
+                AudioSamplingRatesEnum.Rate16KHz, 10, pcm16); // 10 ms @ 16 kHz
         };
 
         // ── WebRTC peer connection ────────────────────────────────────
@@ -70,10 +79,10 @@ public class WebRtcSessionManager(
         peerConn.addTrack(audioTrack);
 
         // Browser audio (mic) aankomt → soundcard TX
+        // Decodeer Opus naar PCM en stuur naar de soundcard.
         peerConn.OnRtpPacketReceived += (_, media, pkt) =>
         {
             if (media != SDPMediaTypesEnum.audio) return;
-            // AudioFormat.OpusWebRTC = payload type 111, 48kHz, 2ch, useinbandfec=1
             var decoded = audioEncoder.DecodeAudio(pkt.Payload, AudioFormat.OpusWebRTC);
             if (decoded is { Length: > 0 })
                 audio.SendPlaybackFrame(decoded);
@@ -97,7 +106,7 @@ public class WebRtcSessionManager(
                 CloseSession(connectionId);
         };
 
-        // SDP offer verwerken
+        // SDP offer verwerken — SdpType is in SIPSorcery.SIP.App
         peerConn.setRemoteDescription(new RTCSessionDescriptionInit
             { type = SdpType.offer, sdp = offerSdp });
 
@@ -139,6 +148,22 @@ public class WebRtcSessionManager(
     {
         foreach (var key in _sessions.Keys)
             CloseSession(key);
+    }
+
+    // ── helpers ───────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Simpele 3:1 decimation: neem elk 3e sample (48 kHz → 16 kHz).
+    /// Voldoende voor radio spraak; geen anti-aliasing filter nodig
+    /// omdat Opus toch low-pass filtert op de encoder.
+    /// </summary>
+    private static short[] Downsample3x(short[] input)
+    {
+        int outLen = input.Length / 3;
+        var output = new short[outLen];
+        for (int i = 0; i < outLen; i++)
+            output[i] = input[i * 3];
+        return output;
     }
 
     private record Session(

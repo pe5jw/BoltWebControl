@@ -7,10 +7,8 @@
     <RootNamespace>BoltAudioBridge</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <!-- WebRTC + SIP/RTP stack -->
-    <PackageReference Include="SIPSorcery" Version="6.*" />
-    <!-- SIPSorcery media abstractions (IAudioSource, IAudioSink, AudioEncoder) -->
-    <PackageReference Include="SIPSorceryMedia.Abstractions" Version="1.*" />
+    <!-- WebRTC + SIP/RTP stack — 10.x bevat SIPSorceryMedia.Abstractions ingebouwd -->
+    <PackageReference Include="SIPSorcery" Version="10.*" />
     <!-- Audio I/O: miniaudio bindings voor Win + Linux, geen externe deps -->
     <PackageReference Include="Hexa.NET.MiniAudio" Version="*" />
   </ItemGroup>
