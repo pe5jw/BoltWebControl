@@ -47,7 +47,7 @@ public sealed unsafe class MiniAudioDevice : IDisposable
         cfg.PeriodSizeInFrames = FramesPerBuf;
 
         // DataCallback: het veld cfg.DataCallback is void* — cast de function pointer expliciet.
-        cfg.DataCallback = (void*)(delegate*<MaDevice*, void*, void*, uint, void>)&DataCallback;
+        cfg.DataCallback = (void*)(delegate* unmanaged<MaDevice*, void*, void*, uint, void>)&DataCallback;
 
         cfg.PUserData = (void*)GCHandle.ToIntPtr(_selfHandle);
 
