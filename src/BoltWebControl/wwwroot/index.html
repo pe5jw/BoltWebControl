@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BoltWebControl</title>
+<style>
+  :root {
+    --bg:      #0d0d0d;
+    --surface: #1a1a1a;
+    --border:  #2a2a2a;
+    --accent:  #00aaff;
+    --danger:  #ff3333;
+    --text:    #e0e0e0;
+    --muted:   #888;
+    --radius:  8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100dvh; }
+
+  header { background: var(--surface); border-bottom: 1px solid var(--border);
+           padding: .6rem 1rem; display: flex; align-items: center; gap: .8rem; }
+  header h1 { font-size: 1rem; font-weight: 600; letter-spacing: .05em; color: var(--accent); }
+  #conn-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+  #conn-dot.ok { background: #22cc66; }
+  #conn-dot.err { background: var(--danger); }
+
+  main { max-width: 480px; margin: 0 auto; padding: 1rem; display: flex; flex-direction: column; gap: 1rem; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
+  .card-title { font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: .6rem; }
+
+  /* VFO */
+  #freq-display { font-size: 2.4rem; font-variant-numeric: tabular-nums; letter-spacing: .05em;
+                  color: var(--accent); cursor: pointer; user-select: none; }
+  #freq-display span.sep { color: var(--muted); }
+  #freq-input { display: none; font-size: 1.4rem; width: 100%; background: var(--bg);
+                border: 1px solid var(--accent); border-radius: 4px; color: var(--accent);
+                padding: .3rem .5rem; font-variant-numeric: tabular-nums; }
+
+  /* Mode */
+  .mode-grid { display: flex; flex-wrap: wrap; gap: .4rem; }
+  .mode-btn { padding: .4rem .8rem; border-radius: 4px; border: 1px solid var(--border);
+              background: var(--bg); color: var(--text); cursor: pointer; font-size: .85rem;
+              transition: background .15s, border-color .15s; }
+  .mode-btn:hover  { border-color: var(--accent); }
+  .mode-btn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
+  /* PTT */
+  #ptt-btn { width: 100%; padding: 1rem; font-size: 1.1rem; font-weight: 700;
+             border: none; border-radius: var(--radius); cursor: pointer;
+             background: #2a2a2a; color: var(--text); letter-spacing: .1em;
+             transition: background .1s, color .1s; }
+  #ptt-btn.tx { background: var(--danger); color: #fff; }
+
+  /* S-meter */
+  #smeter-bar { display: flex; gap: 3px; align-items: flex-end; height: 32px; }
+  .seg { flex: 1; border-radius: 2px; background: var(--border); transition: background .2s; }
+  .seg.s1,.seg.s2,.seg.s3 { background: #22cc66; }
+  .seg.s4,.seg.s5,.seg.s6 { background: #aacc00; }
+  .seg.s7,.seg.s8          { background: #ffaa00; }
+  .seg.s9                  { background: var(--danger); }
+  .seg.off { background: var(--border) !important; }
+  #smeter-label { font-size: .8rem; color: var(--muted); margin-top: .3rem; }
+
+  footer { text-align: center; color: var(--muted); font-size: .7rem; padding: 1rem; }
+</style>
+</head>
+<body>
+<header>
+  <div id="conn-dot"></div>
+  <h1>⚡ BoltWebControl</h1>
+  <span id="conn-label" style="font-size:.8rem;color:var(--muted)">Verbinden…</span>
+</header>
+
+<main>
+  <!-- VFO A -->
+  <div class="card">
+    <div class="card-title">VFO A</div>
+    <div id="freq-display" title="Klik om frequentie in te voeren">
+      <span id="freq-mhz">14</span><span class="sep">.</span><span id="freq-khz">225</span><span class="sep">.</span><span id="freq-hz">000</span>
+    </div>
+    <input id="freq-input" type="number" placeholder="Freq in Hz" min="1000" max="2000000000" step="1">
+  </div>
+
+  <!-- Mode -->
+  <div class="card">
+    <div class="card-title">Mode</div>
+    <div class="mode-grid">
+      <button class="mode-btn" data-mode="USB">USB</button>
+      <button class="mode-btn" data-mode="LSB">LSB</button>
+      <button class="mode-btn" data-mode="AM">AM</button>
+      <button class="mode-btn" data-mode="FM">FM</button>
+      <button class="mode-btn" data-mode="CW">CW</button>
+      <button class="mode-btn" data-mode="RTTY">RTTY</button>
+      <button class="mode-btn" data-mode="FT8">FT8</button>
+    </div>
+  </div>
+
+  <!-- S-meter -->
+  <div class="card">
+    <div class="card-title">S-meter</div>
+    <div id="smeter-bar">
+      <div class="seg s1 off" data-s="1"></div>
+      <div class="seg s2 off" data-s="2"></div>
+      <div class="seg s3 off" data-s="3"></div>
+      <div class="seg s4 off" data-s="4"></div>
+      <div class="seg s5 off" data-s="5"></div>
+      <div class="seg s6 off" data-s="6"></div>
+      <div class="seg s7 off" data-s="7"></div>
+      <div class="seg s8 off" data-s="8"></div>
+      <div class="seg s9 off" data-s="9"></div>
+    </div>
+    <div id="smeter-label">S0</div>
+  </div>
+
+  <!-- PTT -->
+  <div class="card">
+    <div class="card-title">Zenden</div>
+    <button id="ptt-btn">RX</button>
+  </div>
+</main>
+
+<footer>BoltWebControl — PE5JW · <span id="last-update">—</span></footer>
+
+<script src="/hubs/signalr.min.js"></script>
+<script>
+// ── SignalR verbinding ────────────────────────────────────────────────────
+const dot   = document.getElementById('conn-dot');
+const label = document.getElementById('conn-label');
+
+const conn = new signalR.HubConnectionBuilder()
+  .withUrl('/hubs/rig')
+  .withAutomaticReconnect()
+  .build();
+
+conn.on('RigUpdate', state => updateUI(state));
+
+conn.onreconnecting(() => setConn(false, 'Herverbinden…'));
+conn.onreconnected(() => setConn(true,  'Verbonden'));
+conn.onclose(()      => setConn(false, 'Verbroken'));
+
+function setConn(ok, text) {
+  dot.className = ok ? 'ok' : 'err';
+  label.textContent = text;
+}
+
+(async () => {
+  try {
+    await conn.start();
+    setConn(true, 'Verbonden');
+  } catch(e) {
+    setConn(false, 'Fout: ' + e.message);
+  }
+})();
+
+// ── UI updaten vanuit RigUpdate ──────────────────────────────────────────
+function updateUI(s) {
+  setFreqDisplay(s.frequencyHz);
+  setMode(s.mode);
+  setSMeter(s.sMeter);
+  setPttDisplay(s.ptt);
+  document.getElementById('last-update').textContent =
+    new Date().toLocaleTimeString('nl-NL');
+}
+
+function setFreqDisplay(hz) {
+  const mhz = Math.floor(hz / 1_000_000);
+  const khz = Math.floor((hz % 1_000_000) / 1_000);
+  const hzr = hz % 1_000;
+  document.getElementById('freq-mhz').textContent = String(mhz).padStart(2, '0');
+  document.getElementById('freq-khz').textContent = String(khz).padStart(3, '0');
+  document.getElementById('freq-hz').textContent  = String(hzr).padStart(3, '0');
+}
+
+function setMode(mode) {
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+}
+
+function setSMeter(s) {
+  document.querySelectorAll('.seg').forEach(seg => {
+    const v = parseInt(seg.dataset.s);
+    seg.classList.toggle('off', v > s);
+  });
+  document.getElementById('smeter-label').textContent =
+    s === 0 ? 'S0' : (s <= 9 ? `S${s}` : `S9+`);
+}
+
+function setPttDisplay(ptt) {
+  const btn = document.getElementById('ptt-btn');
+  btn.textContent = ptt ? 'TX — ZENDEN' : 'RX';
+  btn.classList.toggle('tx', ptt);
+}
+
+// ── Frequentie invoer ────────────────────────────────────────────────────
+const freqDisplay = document.getElementById('freq-display');
+const freqInput   = document.getElementById('freq-input');
+
+freqDisplay.addEventListener('click', () => {
+  freqDisplay.style.display = 'none';
+  freqInput.style.display   = 'block';
+  freqInput.value = '';
+  freqInput.focus();
+});
+
+freqInput.addEventListener('keydown', async e => {
+  if (e.key === 'Enter') {
+    const hz = parseInt(freqInput.value);
+    if (hz > 0) await setFreq(hz);
+    closeFreqInput();
+  } else if (e.key === 'Escape') {
+    closeFreqInput();
+  }
+});
+
+freqInput.addEventListener('blur', closeFreqInput);
+
+function closeFreqInput() {
+  freqInput.style.display   = 'none';
+  freqDisplay.style.display = 'block';
+}
+
+async function setFreq(hz) {
+  try {
+    await conn.invoke('SetFreq', hz);
+  } catch(e) { console.error('SetFreq fout:', e); }
+}
+
+// ── Mode knoppen ─────────────────────────────────────────────────────────
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    try { await conn.invoke('SetMode', btn.dataset.mode); }
+    catch(e) { console.error('SetMode fout:', e); }
+  });
+});
+
+// ── PTT knop ─────────────────────────────────────────────────────────────
+let pttState = false;
+document.getElementById('ptt-btn').addEventListener('click', async () => {
+  pttState = !pttState;
+  try { await conn.invoke('SetPtt', pttState); }
+  catch(e) { pttState = !pttState; console.error('PTT fout:', e); }
+});
+</script>
+</body>
+</html>
