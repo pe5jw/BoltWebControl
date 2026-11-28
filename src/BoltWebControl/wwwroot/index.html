@@ -8,7 +8,7 @@
   :root {
     --bg:      #0d0d0d;
     --surface: #191919;
-    --surface2:#222222;
+    --surface2:#222;
     --border:  #2e2e2e;
     --accent:  #00aaff;
     --danger:  #ff3333;
@@ -18,160 +18,137 @@
     --muted:   #666;
     --radius:  10px;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg); color: var(--text);
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    min-height: 100dvh; display: flex; flex-direction: column;
-  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100dvh;display:flex;flex-direction:column}
 
   /* ── Header ── */
-  header {
-    background: var(--surface); border-bottom: 1px solid var(--border);
-    padding: .55rem 1.2rem; display: flex; align-items: center; gap: .75rem;
-    flex-shrink: 0;
-  }
-  header h1 { font-size: .95rem; font-weight: 700; letter-spacing: .06em; color: var(--accent); }
-  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: background .3s; }
-  .dot.ok  { background: var(--ok); }
-  .dot.err { background: var(--danger); }
-  .dot.warn{ background: var(--warn); }
-  .status-group { display: flex; align-items: center; gap: .4rem; font-size: .78rem; color: var(--muted); }
-  .status-group + .status-group { margin-left: .8rem; padding-left: .8rem; border-left: 1px solid var(--border); }
-  header .spacer { flex: 1; }
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:.5rem 1rem;display:flex;align-items:center;gap:.6rem;flex-shrink:0}
+  header h1{font-size:.95rem;font-weight:700;letter-spacing:.06em;color:var(--accent)}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background .3s}
+  .dot.ok{background:var(--ok)} .dot.err{background:var(--danger)} .dot.warn{background:var(--warn)}
+  .st{display:flex;align-items:center;gap:.35rem;font-size:.75rem;color:var(--muted)}
+  .st+.st{margin-left:.7rem;padding-left:.7rem;border-left:1px solid var(--border)}
+  .spacer{flex:1}
+  #settings-btn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:.3rem .65rem;cursor:pointer;font-size:.8rem;transition:border-color .15s,color .15s}
+  #settings-btn:hover{border-color:var(--accent);color:var(--accent)}
 
-  /* ── Main layout ── */
-  main {
-    flex: 1; display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto auto;
-    gap: 1px; background: var(--border);
-    max-width: 900px; width: 100%; margin: 0 auto;
-    border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+  /* ── Settings drawer ── */
+  #settings-drawer{
+    background:var(--surface);border-bottom:2px solid var(--accent);
+    padding:1rem 1.2rem;display:none;flex-wrap:wrap;gap:.8rem;align-items:flex-end
+  }
+  #settings-drawer.open{display:flex}
+  .field{display:flex;flex-direction:column;gap:.3rem}
+  .field label{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+  .field input,.field select{
+    background:var(--surface2);border:1px solid var(--border);border-radius:5px;
+    color:var(--text);padding:.4rem .6rem;font-size:.88rem;outline:none;min-width:140px
+  }
+  .field input:focus,.field select:focus{border-color:var(--accent)}
+  .field select option{background:var(--surface2)}
+  #save-btn{
+    padding:.42rem 1rem;background:var(--accent);color:#000;font-weight:700;
+    border:none;border-radius:5px;cursor:pointer;font-size:.88rem;white-space:nowrap
+  }
+  #save-btn:hover{opacity:.85}
+  #save-msg{font-size:.78rem;color:var(--ok);display:none}
+
+  /* ── Main grid ── */
+  main{
+    flex:1;display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:1px;background:var(--border);
+    max-width:900px;width:100%;margin:0 auto;
+    border-left:1px solid var(--border);border-right:1px solid var(--border)
   }
 
-  .panel {
-    background: var(--surface); padding: 1.2rem 1.4rem;
-  }
-  .panel.full { grid-column: 1 / -1; }
-  .panel-label {
-    font-size: .65rem; text-transform: uppercase; letter-spacing: .12em;
-    color: var(--muted); margin-bottom: .75rem;
-  }
+  .panel{background:var(--surface);padding:1.1rem 1.3rem}
+  .panel.span2{grid-column:1/-1}
+  .panel-label{font-size:.62rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:.7rem}
 
   /* ── VFO ── */
-  #vfo-panel { grid-column: 1 / -1; }
-  #freq-display {
-    font-size: 3.6rem; font-variant-numeric: tabular-nums; letter-spacing: .04em;
-    color: var(--accent); cursor: pointer; user-select: none; line-height: 1;
-    padding: .3rem 0;
-  }
-  #freq-display:hover { opacity: .85; }
-  .freq-sep { color: var(--muted); margin: 0 .05em; }
-  #freq-unit { font-size: 1rem; color: var(--muted); margin-left: .4rem; vertical-align: middle; }
-
-  #freq-input {
-    display: none; font-size: 2rem; width: 100%; background: var(--surface2);
-    border: 1px solid var(--accent); border-radius: 6px; color: var(--accent);
-    padding: .4rem .6rem; font-variant-numeric: tabular-nums;
-    outline: none;
-  }
-  .freq-hint { font-size: .72rem; color: var(--muted); margin-top: .35rem; }
+  #freq-display{font-size:3.4rem;font-variant-numeric:tabular-nums;letter-spacing:.04em;color:var(--accent);cursor:pointer;user-select:none;line-height:1;padding:.2rem 0}
+  #freq-display:hover{opacity:.82}
+  .fsep{color:var(--muted);margin:0 .04em}
+  #freq-unit{font-size:1rem;color:var(--muted);margin-left:.35rem;vertical-align:middle}
+  #freq-input{display:none;font-size:2rem;width:100%;background:var(--surface2);border:1px solid var(--accent);border-radius:6px;color:var(--accent);padding:.35rem .55rem;font-variant-numeric:tabular-nums;outline:none}
+  .freq-hint{font-size:.7rem;color:var(--muted);margin-top:.3rem;display:none}
 
   /* ── Mode ── */
-  .mode-grid { display: flex; flex-wrap: wrap; gap: .4rem; }
-  .mode-btn {
-    padding: .45rem 1rem; border-radius: 5px; border: 1px solid var(--border);
-    background: var(--surface2); color: var(--text); cursor: pointer; font-size: .85rem;
-    transition: background .12s, border-color .12s, color .12s;
-  }
-  .mode-btn:hover  { border-color: var(--accent); color: var(--accent); }
-  .mode-btn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+  .mode-grid{display:flex;flex-wrap:wrap;gap:.35rem}
+  .mode-btn{padding:.4rem .9rem;border-radius:5px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:.82rem;transition:background .1s,border-color .1s,color .1s}
+  .mode-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .mode-btn.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700}
 
   /* ── S-meter ── */
-  #smeter-track {
-    display: flex; gap: 4px; height: 36px; align-items: flex-end;
-  }
-  .seg {
-    flex: 1; border-radius: 3px 3px 0 0;
-    background: var(--border);
-    transition: background .15s;
-  }
-  /* heights increasing */
-  .seg:nth-child(1) { height: 30%; }
-  .seg:nth-child(2) { height: 40%; }
-  .seg:nth-child(3) { height: 50%; }
-  .seg:nth-child(4) { height: 55%; }
-  .seg:nth-child(5) { height: 62%; }
-  .seg:nth-child(6) { height: 70%; }
-  .seg:nth-child(7) { height: 80%; }
-  .seg:nth-child(8) { height: 90%; }
-  .seg:nth-child(9) { height: 100%; }
-
-  .seg.lit-1,.seg.lit-2,.seg.lit-3 { background: var(--ok); }
-  .seg.lit-4,.seg.lit-5,.seg.lit-6 { background: #aacc00; }
-  .seg.lit-7,.seg.lit-8            { background: var(--warn); }
-  .seg.lit-9                       { background: var(--danger); }
-
-  #smeter-labels {
-    display: flex; justify-content: space-between;
-    font-size: .6rem; color: var(--muted); margin-top: .2rem; padding: 0 2px;
-  }
-  #smeter-value { font-size: .85rem; color: var(--text); margin-top: .4rem; }
+  #smeter-track{display:flex;gap:4px;height:36px;align-items:flex-end}
+  .seg{flex:1;border-radius:3px 3px 0 0;background:var(--border);transition:background .15s}
+  .seg:nth-child(1){height:28%} .seg:nth-child(2){height:37%} .seg:nth-child(3){height:47%}
+  .seg:nth-child(4){height:54%} .seg:nth-child(5){height:63%} .seg:nth-child(6){height:72%}
+  .seg:nth-child(7){height:81%} .seg:nth-child(8){height:90%} .seg:nth-child(9){height:100%}
+  .seg.l1,.seg.l2,.seg.l3{background:var(--ok)}
+  .seg.l4,.seg.l5,.seg.l6{background:#aacc00}
+  .seg.l7,.seg.l8{background:var(--warn)}
+  .seg.l9{background:var(--danger)}
+  #smeter-labels{display:flex;justify-content:space-between;font-size:.58rem;color:var(--muted);margin-top:.2rem;padding:0 2px}
+  #smeter-val{font-size:.82rem;color:var(--text);margin-top:.4rem}
 
   /* ── PTT ── */
-  #ptt-btn {
-    width: 100%; padding: 1.1rem; font-size: 1.1rem; font-weight: 800;
-    border: 2px solid var(--border); border-radius: var(--radius);
-    cursor: pointer; letter-spacing: .15em; background: var(--surface2); color: var(--muted);
-    transition: all .1s;
-  }
-  #ptt-btn.rx-ready { border-color: var(--ok); color: var(--ok); background: var(--surface2); }
-  #ptt-btn.tx       { background: var(--danger); color: #fff; border-color: var(--danger);
-                      box-shadow: 0 0 24px rgba(255,51,51,.35); }
+  #ptt-btn{width:100%;padding:1rem;font-size:1.05rem;font-weight:800;border:2px solid var(--border);border-radius:var(--radius);cursor:pointer;letter-spacing:.15em;background:var(--surface2);color:var(--muted);transition:all .1s}
+  #ptt-btn.rdy{border-color:var(--ok);color:var(--ok)}
+  #ptt-btn.tx{background:var(--danger);color:#fff;border-color:var(--danger);box-shadow:0 0 20px rgba(255,51,51,.3)}
 
-  /* ── Info row ── */
-  #info-panel {
-    grid-column: 1 / -1; background: var(--bg); border-top: 1px solid var(--border);
-    padding: .4rem 1.2rem; display: flex; gap: 1.2rem; align-items: center;
-    font-size: .7rem; color: var(--muted);
-  }
-  #info-panel span { display: flex; align-items: center; gap: .3rem; }
+  /* ── Footer ── */
+  #foot{grid-column:1/-1;background:var(--bg);border-top:1px solid var(--border);padding:.35rem 1.2rem;display:flex;gap:1rem;font-size:.68rem;color:var(--muted)}
+  #foot .r{margin-left:auto}
 
-  @media (max-width: 540px) {
-    main { grid-template-columns: 1fr; }
-    .panel.full { grid-column: 1; }
-    #vfo-panel  { grid-column: 1; }
-    #info-panel { grid-column: 1; }
-    #freq-display { font-size: 2.4rem; }
+  @media(max-width:540px){
+    main{grid-template-columns:1fr}
+    .panel.span2,.panel{grid-column:1}
+    #freq-display{font-size:2.4rem}
   }
 </style>
 </head>
 <body>
 
+<!-- Header -->
 <header>
   <span style="font-size:1.1rem">⚡</span>
   <h1>BoltWebControl</h1>
   <div class="spacer"></div>
-  <div class="status-group">
-    <div class="dot" id="hub-dot"></div>
-    <span id="hub-label">SignalR…</span>
-  </div>
-  <div class="status-group">
-    <div class="dot" id="rig-dot"></div>
-    <span id="rig-label">rigctld…</span>
-  </div>
+  <div class="st"><div class="dot" id="hub-dot"></div><span id="hub-lbl">SignalR…</span></div>
+  <div class="st"><div class="dot" id="rig-dot"></div><span id="rig-lbl">rigctld…</span></div>
+  <button id="settings-btn" onclick="toggleSettings()">⚙ Instellingen</button>
 </header>
 
+<!-- Settings drawer -->
+<div id="settings-drawer">
+  <div class="field">
+    <label>rigctld host</label>
+    <input id="s-host" type="text" placeholder="localhost" value="localhost">
+  </div>
+  <div class="field">
+    <label>Poort</label>
+    <input id="s-port" type="number" min="1" max="65535" placeholder="4532" value="4532" style="min-width:90px">
+  </div>
+  <div class="field">
+    <label>Rig model</label>
+    <select id="s-rig"><option value="Auto">— laden… —</option></select>
+  </div>
+  <button id="save-btn" onclick="saveSettings()">Opslaan</button>
+  <span id="save-msg">✓ Opgeslagen</span>
+</div>
+
+<!-- Main -->
 <main>
   <!-- VFO A -->
-  <div class="panel" id="vfo-panel">
+  <div class="panel span2">
     <div class="panel-label">VFO A</div>
     <div id="freq-display">
-      <span id="f-mhz">14</span><span class="freq-sep">.</span><span id="f-khz">225</span><span class="freq-sep">.</span><span id="f-hz">000</span><span id="freq-unit">MHz</span>
+      <span id="f-mhz">14</span><span class="fsep">.</span><span id="f-khz">225</span><span class="fsep">.</span><span id="f-hz">000</span><span id="freq-unit">MHz</span>
     </div>
     <input id="freq-input" type="number" placeholder="Freq in Hz (bijv. 14225000)" min="1000" max="2000000000" step="1">
-    <div class="freq-hint" id="freq-hint" style="display:none">Enter = bevestigen &nbsp;·&nbsp; Esc = annuleren</div>
+    <div class="freq-hint" id="freq-hint">Enter = bevestigen &nbsp;·&nbsp; Esc = annuleren</div>
   </div>
 
   <!-- Mode -->
@@ -185,7 +162,8 @@
       <button class="mode-btn" data-mode="CW">CW</button>
       <button class="mode-btn" data-mode="CWR">CW-R</button>
       <button class="mode-btn" data-mode="RTTY">RTTY</button>
-      <button class="mode-btn" data-mode="PKTUSB">FT8</button>
+      <button class="mode-btn" data-mode="RTTYR">RTTY-R</button>
+      <button class="mode-btn" data-mode="PKTUSB">FT8/DATA</button>
       <button class="mode-btn" data-mode="PKTLSB">PSK</button>
     </div>
   </div>
@@ -194,20 +172,14 @@
   <div class="panel">
     <div class="panel-label">S-meter</div>
     <div id="smeter-track">
-      <div class="seg" data-s="1"></div>
-      <div class="seg" data-s="2"></div>
-      <div class="seg" data-s="3"></div>
-      <div class="seg" data-s="4"></div>
-      <div class="seg" data-s="5"></div>
-      <div class="seg" data-s="6"></div>
-      <div class="seg" data-s="7"></div>
-      <div class="seg" data-s="8"></div>
+      <div class="seg" data-s="1"></div><div class="seg" data-s="2"></div>
+      <div class="seg" data-s="3"></div><div class="seg" data-s="4"></div>
+      <div class="seg" data-s="5"></div><div class="seg" data-s="6"></div>
+      <div class="seg" data-s="7"></div><div class="seg" data-s="8"></div>
       <div class="seg" data-s="9"></div>
     </div>
-    <div id="smeter-labels">
-      <span>S1</span><span>S3</span><span>S5</span><span>S7</span><span>S9</span>
-    </div>
-    <div id="smeter-value">S0 · geen signaal</div>
+    <div id="smeter-labels"><span>S1</span><span>S3</span><span>S5</span><span>S7</span><span>S9</span></div>
+    <div id="smeter-val">S0 · geen signaal</div>
   </div>
 
   <!-- PTT -->
@@ -216,64 +188,58 @@
     <button id="ptt-btn">RX</button>
   </div>
 
-  <!-- Info footer -->
-  <div id="info-panel">
+  <!-- Footer -->
+  <div id="foot">
     <span>PE5JW</span>
-    <span id="last-ts">—</span>
-    <span style="margin-left:auto">BoltWebControl v0.1</span>
+    <span id="ts">—</span>
+    <span class="r">BoltWebControl v0.1</span>
   </div>
 </main>
 
 <script src="/hubs/signalr.min.js"></script>
 <script>
-// ── Elementen ─────────────────────────────────────────────────────────────
-const hubDot   = document.getElementById('hub-dot');
-const hubLabel = document.getElementById('hub-label');
-const rigDot   = document.getElementById('rig-dot');
-const rigLabel = document.getElementById('rig-label');
+// ── Status helpers ────────────────────────────────────────────────────────
+const hubDot = document.getElementById('hub-dot');
+const hubLbl = document.getElementById('hub-lbl');
+const rigDot = document.getElementById('rig-dot');
+const rigLbl = document.getElementById('rig-lbl');
+let rigConnected = false;
+
+function setHub(ok, txt) { hubDot.className='dot '+(ok?'ok':'err'); hubLbl.textContent=txt; }
+function setRig(ok, txt) {
+  rigConnected = ok;
+  rigDot.className = 'dot '+(ok?'ok':'err');
+  rigLbl.textContent = txt ?? (ok ? 'rigctld verbonden' : 'rigctld: offline');
+  const ptt = document.getElementById('ptt-btn');
+  if (!ptt.classList.contains('tx')) ptt.className = ok ? 'rdy' : '';
+}
 
 // ── SignalR ───────────────────────────────────────────────────────────────
 const conn = new signalR.HubConnectionBuilder()
   .withUrl('/hubs/rig')
-  .withAutomaticReconnect([500, 1000, 2000, 5000])
+  .withAutomaticReconnect([500,1000,2000,5000])
   .build();
 
-conn.on('RigUpdate', state => {
-  setRigStatus(true);
-  updateUI(state);
-});
+conn.on('RigUpdate',  s   => { setRig(true); updateUI(s); });
+conn.on('RigOffline', msg => setRig(false, 'rigctld: '+msg));
 
-// Server stuurt RigOffline wanneer rigctld niet bereikbaar is
-conn.on('RigOffline', msg => {
-  setRigStatus(false, msg);
-});
-
-conn.onreconnecting(() => setHubStatus(false, 'Herverbinden…'));
-conn.onreconnected(() => setHubStatus(true,  'Verbonden'));
-conn.onclose(()      => setHubStatus(false, 'Verbroken'));
-
-function setHubStatus(ok, text) {
-  hubDot.className = 'dot ' + (ok ? 'ok' : 'err');
-  hubLabel.textContent = text;
-}
-function setRigStatus(ok, msg) {
-  rigDot.className = 'dot ' + (ok ? 'ok' : 'err');
-  rigLabel.textContent = ok ? 'rigctld verbonden' : ('rigctld: ' + (msg ?? 'offline'));
-}
+conn.onreconnecting(() => setHub(false,'Herverbinden…'));
+conn.onreconnected(()  => setHub(true, 'Verbonden'));
+conn.onclose(()        => setHub(false,'Verbroken'));
 
 (async () => {
   try {
     await conn.start();
-    setHubStatus(true, 'Verbonden');
-    // Haal direct een status op zodat we meteen weten of rigctld er is
+    setHub(true, 'Verbonden');
+    // Direct status ophalen
     try {
       const r = await fetch('/api/status');
-      if (r.ok) { const s = await r.json(); updateUI(s); setRigStatus(true); }
-      else       { setRigStatus(false, 'niet bereikbaar'); }
-    } catch { setRigStatus(false, 'niet bereikbaar'); }
+      if (r.ok) { updateUI(await r.json()); setRig(true); }
+      else       setRig(false, 'rigctld: niet bereikbaar');
+    } catch { setRig(false, 'rigctld: niet bereikbaar'); }
+    loadSettings();
   } catch(e) {
-    setHubStatus(false, 'Fout: ' + e.message);
-    setRigStatus(false, '—');
+    setHub(false, 'Fout: '+e.message);
   }
 })();
 
@@ -282,98 +248,117 @@ function updateUI(s) {
   setFreqDisplay(s.frequencyHz);
   setMode(s.mode);
   setSMeter(s.sMeter);
-  setPttDisplay(s.ptt);
-  document.getElementById('last-ts').textContent =
+  setPtt(s.ptt);
+  document.getElementById('ts').textContent =
     'Bijgewerkt: ' + new Date().toLocaleTimeString('nl-NL');
 }
 
 function setFreqDisplay(hz) {
-  const mhz = Math.floor(hz / 1_000_000);
-  const khz = Math.floor((hz % 1_000_000) / 1_000);
-  const hzr = hz % 1_000;
-  document.getElementById('f-mhz').textContent = String(mhz).padStart(2,'0');
-  document.getElementById('f-khz').textContent = String(khz).padStart(3,'0');
-  document.getElementById('f-hz').textContent  = String(hzr).padStart(3,'0');
+  document.getElementById('f-mhz').textContent = String(Math.floor(hz/1e6)).padStart(2,'0');
+  document.getElementById('f-khz').textContent = String(Math.floor((hz%1e6)/1e3)).padStart(3,'0');
+  document.getElementById('f-hz').textContent  = String(hz%1e3).padStart(3,'0');
 }
 
 function setMode(mode) {
-  // Normaliseer: rigctld geeft soms "USB\n" of "PKTUSB" terug
-  const m = (mode || '').trim().toUpperCase();
+  const m = (mode||'').trim().toUpperCase();
   document.querySelectorAll('.mode-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.mode === m));
 }
 
-const sMeterText = ['','S1','S2','S3','S4','S5','S6','S7','S8','S9'];
 function setSMeter(s) {
-  const v = Math.max(0, Math.min(9, s));
+  const v = Math.max(0, Math.min(9, s|0));
   document.querySelectorAll('.seg').forEach(seg => {
-    const n = parseInt(seg.dataset.s);
-    seg.className = 'seg' + (n <= v ? ` lit-${n}` : '');
+    const n = +seg.dataset.s;
+    seg.className = 'seg' + (n <= v ? ` l${n}` : '');
   });
-  const txt = v === 0 ? 'S0 · geen signaal'
-            : v === 9 ? 'S9 · sterk signaal'
-            : `${sMeterText[v]}`;
-  document.getElementById('smeter-value').textContent = txt;
+  document.getElementById('smeter-val').textContent =
+    v===0 ? 'S0 · geen signaal' : v===9 ? 'S9 · sterk signaal' : `S${v}`;
 }
 
-function setPttDisplay(ptt) {
+function setPtt(on) {
   const btn = document.getElementById('ptt-btn');
-  if (ptt) {
-    btn.textContent = 'TX — ZENDEN';
-    btn.className = 'tx';
-  } else {
-    btn.textContent = 'RX';
-    btn.className = rigOk ? 'rx-ready' : '';
-  }
+  if (on) { btn.textContent='TX — ZENDEN'; btn.className='tx'; }
+  else     { btn.textContent='RX'; btn.className = rigConnected?'rdy':''; }
 }
 
 // ── Frequentie invoer ─────────────────────────────────────────────────────
-let rigOk = false;
-const freqDisplay = document.getElementById('freq-display');
-const freqInput   = document.getElementById('freq-input');
-const freqHint    = document.getElementById('freq-hint');
+const freqDisp  = document.getElementById('freq-display');
+const freqInput = document.getElementById('freq-input');
+const freqHint  = document.getElementById('freq-hint');
 
-freqDisplay.addEventListener('click', () => {
-  freqDisplay.style.display = 'none';
-  freqInput.style.display   = 'block';
-  freqHint.style.display    = 'block';
+freqDisp.addEventListener('click', () => {
+  freqDisp.style.display='none'; freqInput.style.display='block'; freqHint.style.display='block';
   freqInput.focus();
 });
-
 freqInput.addEventListener('keydown', async e => {
-  if (e.key === 'Enter') {
-    const hz = parseInt(freqInput.value);
-    if (hz >= 1000) await invoke('SetFreq', hz);
-    hideFreqInput();
-  } else if (e.key === 'Escape') {
-    hideFreqInput();
-  }
+  if (e.key==='Enter') { const hz=parseInt(freqInput.value); if(hz>=1000) await hub('SetFreq',hz); hideFreq(); }
+  else if (e.key==='Escape') hideFreq();
 });
-freqInput.addEventListener('blur', hideFreqInput);
+freqInput.addEventListener('blur', hideFreq);
+function hideFreq(){ freqInput.style.display='none'; freqHint.style.display='none'; freqDisp.style.display=''; }
 
-function hideFreqInput() {
-  freqInput.style.display   = 'none';
-  freqHint.style.display    = 'none';
-  freqDisplay.style.display = '';
-}
-
-// ── Mode knoppen ──────────────────────────────────────────────────────────
-document.querySelectorAll('.mode-btn').forEach(btn => {
-  btn.addEventListener('click', () => invoke('SetMode', btn.dataset.mode));
-});
+// ── Mode ──────────────────────────────────────────────────────────────────
+document.querySelectorAll('.mode-btn').forEach(b =>
+  b.addEventListener('click', () => hub('SetMode', b.dataset.mode)));
 
 // ── PTT ───────────────────────────────────────────────────────────────────
 let pttState = false;
 document.getElementById('ptt-btn').addEventListener('click', async () => {
   pttState = !pttState;
-  try { await invoke('SetPtt', pttState); }
-  catch { pttState = !pttState; }
+  try { await hub('SetPtt', pttState); } catch { pttState=!pttState; }
 });
 
-// ── Helper ────────────────────────────────────────────────────────────────
-async function invoke(method, ...args) {
-  try { await conn.invoke(method, ...args); }
-  catch(e) { console.warn(method, 'mislukt:', e.message); }
+async function hub(method, ...args) {
+  try { await conn.invoke(method, ...args); } catch(e) { console.warn(method, e.message); }
+}
+
+// ── Settings ─────────────────────────────────────────────────────────────
+function toggleSettings() {
+  const d = document.getElementById('settings-drawer');
+  d.classList.toggle('open');
+}
+
+async function loadSettings() {
+  try {
+    const r = await fetch('/api/settings');
+    if (!r.ok) return;
+    const s = await r.json();
+
+    document.getElementById('s-host').value = s.host;
+    document.getElementById('s-port').value = s.port;
+
+    // Vul rig dropdown
+    const sel = document.getElementById('s-rig');
+    sel.innerHTML = '<option value="Auto">Auto (rigctld bepaalt)</option>';
+    (s.knownRigs || []).forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r.model;
+      opt.textContent = `${r.model} — ${r.name}`;
+      if (r.name === s.rig || String(r.model) === s.rig) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    if (s.rig === 'Auto') sel.value = 'Auto';
+  } catch(e) { console.warn('loadSettings:', e); }
+}
+
+async function saveSettings() {
+  const host = document.getElementById('s-host').value.trim();
+  const port = parseInt(document.getElementById('s-port').value) || 4532;
+  const rig  = document.getElementById('s-rig').value;
+
+  try {
+    const r = await fetch('/api/settings', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ host, port, rig })
+    });
+    if (r.ok) {
+      const msg = document.getElementById('save-msg');
+      msg.style.display = 'inline';
+      setTimeout(() => msg.style.display='none', 2500);
+      setRig(false, 'rigctld: herverbinden…');
+    }
+  } catch(e) { console.error('saveSettings:', e); }
 }
 </script>
 </body>
