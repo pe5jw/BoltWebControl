@@ -55,21 +55,22 @@ app.MapPost("/api/ptt", async (PttRequest req, RigctldClient rig, CancellationTo
 // ── REST: instellingen lezen & schrijven ──────────────────────────────────
 app.MapGet("/api/settings", (RigSettings s) => Results.Ok(new
 {
-    s.Host, s.Port, s.Rig,
+    s.Host, s.Port, s.Rig, s.SerialPort,
     knownRigs = RigSettings.KnownRigs.Select(r => new { r.Model, r.Name })
 }));
 
 app.MapPost("/api/settings", (SettingsRequest req, RigSettings s, RigctldClient rig) =>
 {
-    if (!string.IsNullOrWhiteSpace(req.Host)) s.Host = req.Host;
-    if (req.Port is > 0 and < 65536)          s.Port = req.Port;
-    if (!string.IsNullOrWhiteSpace(req.Rig))  s.Rig  = req.Rig;
+    if (!string.IsNullOrWhiteSpace(req.Host))       s.Host       = req.Host;
+    if (req.Port is > 0 and < 65536)                s.Port       = req.Port;
+    if (!string.IsNullOrWhiteSpace(req.Rig))        s.Rig        = req.Rig;
+    if (req.SerialPort is not null)                  s.SerialPort = req.SerialPort;
 
     // Live bijwerken van de RigctldClient
     rig.Host = s.Host;
     rig.Port = s.Port;
 
-    return Results.Ok(new { s.Host, s.Port, s.Rig });
+    return Results.Ok(new { s.Host, s.Port, s.Rig, s.SerialPort });
 });
 
 // ── SignalR hub ───────────────────────────────────────────────────────────
@@ -81,4 +82,4 @@ app.Run();
 record FreqRequest(long Hz);
 record ModeRequest(string Mode);
 record PttRequest(bool On);
-record SettingsRequest(string? Host, int Port, string? Rig);
+record SettingsRequest(string? Host, int Port, string? Rig, string? SerialPort);

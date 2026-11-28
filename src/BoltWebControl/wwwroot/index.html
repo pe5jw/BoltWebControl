@@ -135,6 +135,10 @@
     <label>Rig model</label>
     <select id="s-rig"><option value="Auto">— laden… —</option></select>
   </div>
+  <div class="field">
+    <label>Seriële poort <span style="font-size:.65rem;color:var(--muted)">(optioneel)</span></label>
+    <input id="s-serport" type="text" placeholder="COM3 of /dev/ttyUSB0" style="min-width:160px">
+  </div>
   <button id="save-btn" onclick="saveSettings()">Opslaan</button>
   <span id="save-msg">✓ Opgeslagen</span>
 </div>
@@ -326,6 +330,7 @@ async function loadSettings() {
 
     document.getElementById('s-host').value = s.host;
     document.getElementById('s-port').value = s.port;
+    document.getElementById('s-serport').value = s.serialPort ?? '';
 
     // Vul rig dropdown
     const sel = document.getElementById('s-rig');
@@ -342,15 +347,16 @@ async function loadSettings() {
 }
 
 async function saveSettings() {
-  const host = document.getElementById('s-host').value.trim();
-  const port = parseInt(document.getElementById('s-port').value) || 4532;
-  const rig  = document.getElementById('s-rig').value;
+  const host      = document.getElementById('s-host').value.trim();
+  const port      = parseInt(document.getElementById('s-port').value) || 4532;
+  const rig       = document.getElementById('s-rig').value;
+  const serialPort = document.getElementById('s-serport').value.trim();
 
   try {
     const r = await fetch('/api/settings', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ host, port, rig })
+      body: JSON.stringify({ host, port, rig, serialPort })
     });
     if (r.ok) {
       const msg = document.getElementById('save-msg');
