@@ -7,242 +7,374 @@
 <style>
   :root {
     --bg:      #0d0d0d;
-    --surface: #1a1a1a;
-    --border:  #2a2a2a;
+    --surface: #191919;
+    --surface2:#222222;
+    --border:  #2e2e2e;
     --accent:  #00aaff;
     --danger:  #ff3333;
+    --ok:      #22cc66;
+    --warn:    #ffaa00;
     --text:    #e0e0e0;
-    --muted:   #888;
-    --radius:  8px;
+    --muted:   #666;
+    --radius:  10px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100dvh; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100dvh; display: flex; flex-direction: column;
+  }
 
-  header { background: var(--surface); border-bottom: 1px solid var(--border);
-           padding: .6rem 1rem; display: flex; align-items: center; gap: .8rem; }
-  header h1 { font-size: 1rem; font-weight: 600; letter-spacing: .05em; color: var(--accent); }
-  #conn-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
-  #conn-dot.ok { background: #22cc66; }
-  #conn-dot.err { background: var(--danger); }
+  /* ── Header ── */
+  header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: .55rem 1.2rem; display: flex; align-items: center; gap: .75rem;
+    flex-shrink: 0;
+  }
+  header h1 { font-size: .95rem; font-weight: 700; letter-spacing: .06em; color: var(--accent); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: background .3s; }
+  .dot.ok  { background: var(--ok); }
+  .dot.err { background: var(--danger); }
+  .dot.warn{ background: var(--warn); }
+  .status-group { display: flex; align-items: center; gap: .4rem; font-size: .78rem; color: var(--muted); }
+  .status-group + .status-group { margin-left: .8rem; padding-left: .8rem; border-left: 1px solid var(--border); }
+  header .spacer { flex: 1; }
 
-  main { max-width: 480px; margin: 0 auto; padding: 1rem; display: flex; flex-direction: column; gap: 1rem; }
+  /* ── Main layout ── */
+  main {
+    flex: 1; display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 1px; background: var(--border);
+    max-width: 900px; width: 100%; margin: 0 auto;
+    border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+  }
 
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
-  .card-title { font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: .6rem; }
+  .panel {
+    background: var(--surface); padding: 1.2rem 1.4rem;
+  }
+  .panel.full { grid-column: 1 / -1; }
+  .panel-label {
+    font-size: .65rem; text-transform: uppercase; letter-spacing: .12em;
+    color: var(--muted); margin-bottom: .75rem;
+  }
 
-  /* VFO */
-  #freq-display { font-size: 2.4rem; font-variant-numeric: tabular-nums; letter-spacing: .05em;
-                  color: var(--accent); cursor: pointer; user-select: none; }
-  #freq-display span.sep { color: var(--muted); }
-  #freq-input { display: none; font-size: 1.4rem; width: 100%; background: var(--bg);
-                border: 1px solid var(--accent); border-radius: 4px; color: var(--accent);
-                padding: .3rem .5rem; font-variant-numeric: tabular-nums; }
+  /* ── VFO ── */
+  #vfo-panel { grid-column: 1 / -1; }
+  #freq-display {
+    font-size: 3.6rem; font-variant-numeric: tabular-nums; letter-spacing: .04em;
+    color: var(--accent); cursor: pointer; user-select: none; line-height: 1;
+    padding: .3rem 0;
+  }
+  #freq-display:hover { opacity: .85; }
+  .freq-sep { color: var(--muted); margin: 0 .05em; }
+  #freq-unit { font-size: 1rem; color: var(--muted); margin-left: .4rem; vertical-align: middle; }
 
-  /* Mode */
+  #freq-input {
+    display: none; font-size: 2rem; width: 100%; background: var(--surface2);
+    border: 1px solid var(--accent); border-radius: 6px; color: var(--accent);
+    padding: .4rem .6rem; font-variant-numeric: tabular-nums;
+    outline: none;
+  }
+  .freq-hint { font-size: .72rem; color: var(--muted); margin-top: .35rem; }
+
+  /* ── Mode ── */
   .mode-grid { display: flex; flex-wrap: wrap; gap: .4rem; }
-  .mode-btn { padding: .4rem .8rem; border-radius: 4px; border: 1px solid var(--border);
-              background: var(--bg); color: var(--text); cursor: pointer; font-size: .85rem;
-              transition: background .15s, border-color .15s; }
-  .mode-btn:hover  { border-color: var(--accent); }
-  .mode-btn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+  .mode-btn {
+    padding: .45rem 1rem; border-radius: 5px; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--text); cursor: pointer; font-size: .85rem;
+    transition: background .12s, border-color .12s, color .12s;
+  }
+  .mode-btn:hover  { border-color: var(--accent); color: var(--accent); }
+  .mode-btn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
 
-  /* PTT */
-  #ptt-btn { width: 100%; padding: 1rem; font-size: 1.1rem; font-weight: 700;
-             border: none; border-radius: var(--radius); cursor: pointer;
-             background: #2a2a2a; color: var(--text); letter-spacing: .1em;
-             transition: background .1s, color .1s; }
-  #ptt-btn.tx { background: var(--danger); color: #fff; }
+  /* ── S-meter ── */
+  #smeter-track {
+    display: flex; gap: 4px; height: 36px; align-items: flex-end;
+  }
+  .seg {
+    flex: 1; border-radius: 3px 3px 0 0;
+    background: var(--border);
+    transition: background .15s;
+  }
+  /* heights increasing */
+  .seg:nth-child(1) { height: 30%; }
+  .seg:nth-child(2) { height: 40%; }
+  .seg:nth-child(3) { height: 50%; }
+  .seg:nth-child(4) { height: 55%; }
+  .seg:nth-child(5) { height: 62%; }
+  .seg:nth-child(6) { height: 70%; }
+  .seg:nth-child(7) { height: 80%; }
+  .seg:nth-child(8) { height: 90%; }
+  .seg:nth-child(9) { height: 100%; }
 
-  /* S-meter */
-  #smeter-bar { display: flex; gap: 3px; align-items: flex-end; height: 32px; }
-  .seg { flex: 1; border-radius: 2px; background: var(--border); transition: background .2s; }
-  .seg.s1,.seg.s2,.seg.s3 { background: #22cc66; }
-  .seg.s4,.seg.s5,.seg.s6 { background: #aacc00; }
-  .seg.s7,.seg.s8          { background: #ffaa00; }
-  .seg.s9                  { background: var(--danger); }
-  .seg.off { background: var(--border) !important; }
-  #smeter-label { font-size: .8rem; color: var(--muted); margin-top: .3rem; }
+  .seg.lit-1,.seg.lit-2,.seg.lit-3 { background: var(--ok); }
+  .seg.lit-4,.seg.lit-5,.seg.lit-6 { background: #aacc00; }
+  .seg.lit-7,.seg.lit-8            { background: var(--warn); }
+  .seg.lit-9                       { background: var(--danger); }
 
-  footer { text-align: center; color: var(--muted); font-size: .7rem; padding: 1rem; }
+  #smeter-labels {
+    display: flex; justify-content: space-between;
+    font-size: .6rem; color: var(--muted); margin-top: .2rem; padding: 0 2px;
+  }
+  #smeter-value { font-size: .85rem; color: var(--text); margin-top: .4rem; }
+
+  /* ── PTT ── */
+  #ptt-btn {
+    width: 100%; padding: 1.1rem; font-size: 1.1rem; font-weight: 800;
+    border: 2px solid var(--border); border-radius: var(--radius);
+    cursor: pointer; letter-spacing: .15em; background: var(--surface2); color: var(--muted);
+    transition: all .1s;
+  }
+  #ptt-btn.rx-ready { border-color: var(--ok); color: var(--ok); background: var(--surface2); }
+  #ptt-btn.tx       { background: var(--danger); color: #fff; border-color: var(--danger);
+                      box-shadow: 0 0 24px rgba(255,51,51,.35); }
+
+  /* ── Info row ── */
+  #info-panel {
+    grid-column: 1 / -1; background: var(--bg); border-top: 1px solid var(--border);
+    padding: .4rem 1.2rem; display: flex; gap: 1.2rem; align-items: center;
+    font-size: .7rem; color: var(--muted);
+  }
+  #info-panel span { display: flex; align-items: center; gap: .3rem; }
+
+  @media (max-width: 540px) {
+    main { grid-template-columns: 1fr; }
+    .panel.full { grid-column: 1; }
+    #vfo-panel  { grid-column: 1; }
+    #info-panel { grid-column: 1; }
+    #freq-display { font-size: 2.4rem; }
+  }
 </style>
 </head>
 <body>
+
 <header>
-  <div id="conn-dot"></div>
-  <h1>⚡ BoltWebControl</h1>
-  <span id="conn-label" style="font-size:.8rem;color:var(--muted)">Verbinden…</span>
+  <span style="font-size:1.1rem">⚡</span>
+  <h1>BoltWebControl</h1>
+  <div class="spacer"></div>
+  <div class="status-group">
+    <div class="dot" id="hub-dot"></div>
+    <span id="hub-label">SignalR…</span>
+  </div>
+  <div class="status-group">
+    <div class="dot" id="rig-dot"></div>
+    <span id="rig-label">rigctld…</span>
+  </div>
 </header>
 
 <main>
   <!-- VFO A -->
-  <div class="card">
-    <div class="card-title">VFO A</div>
-    <div id="freq-display" title="Klik om frequentie in te voeren">
-      <span id="freq-mhz">14</span><span class="sep">.</span><span id="freq-khz">225</span><span class="sep">.</span><span id="freq-hz">000</span>
+  <div class="panel" id="vfo-panel">
+    <div class="panel-label">VFO A</div>
+    <div id="freq-display">
+      <span id="f-mhz">14</span><span class="freq-sep">.</span><span id="f-khz">225</span><span class="freq-sep">.</span><span id="f-hz">000</span><span id="freq-unit">MHz</span>
     </div>
-    <input id="freq-input" type="number" placeholder="Freq in Hz" min="1000" max="2000000000" step="1">
+    <input id="freq-input" type="number" placeholder="Freq in Hz (bijv. 14225000)" min="1000" max="2000000000" step="1">
+    <div class="freq-hint" id="freq-hint" style="display:none">Enter = bevestigen &nbsp;·&nbsp; Esc = annuleren</div>
   </div>
 
   <!-- Mode -->
-  <div class="card">
-    <div class="card-title">Mode</div>
+  <div class="panel">
+    <div class="panel-label">Mode</div>
     <div class="mode-grid">
       <button class="mode-btn" data-mode="USB">USB</button>
       <button class="mode-btn" data-mode="LSB">LSB</button>
       <button class="mode-btn" data-mode="AM">AM</button>
       <button class="mode-btn" data-mode="FM">FM</button>
       <button class="mode-btn" data-mode="CW">CW</button>
+      <button class="mode-btn" data-mode="CWR">CW-R</button>
       <button class="mode-btn" data-mode="RTTY">RTTY</button>
-      <button class="mode-btn" data-mode="FT8">FT8</button>
+      <button class="mode-btn" data-mode="PKTUSB">FT8</button>
+      <button class="mode-btn" data-mode="PKTLSB">PSK</button>
     </div>
   </div>
 
   <!-- S-meter -->
-  <div class="card">
-    <div class="card-title">S-meter</div>
-    <div id="smeter-bar">
-      <div class="seg s1 off" data-s="1"></div>
-      <div class="seg s2 off" data-s="2"></div>
-      <div class="seg s3 off" data-s="3"></div>
-      <div class="seg s4 off" data-s="4"></div>
-      <div class="seg s5 off" data-s="5"></div>
-      <div class="seg s6 off" data-s="6"></div>
-      <div class="seg s7 off" data-s="7"></div>
-      <div class="seg s8 off" data-s="8"></div>
-      <div class="seg s9 off" data-s="9"></div>
+  <div class="panel">
+    <div class="panel-label">S-meter</div>
+    <div id="smeter-track">
+      <div class="seg" data-s="1"></div>
+      <div class="seg" data-s="2"></div>
+      <div class="seg" data-s="3"></div>
+      <div class="seg" data-s="4"></div>
+      <div class="seg" data-s="5"></div>
+      <div class="seg" data-s="6"></div>
+      <div class="seg" data-s="7"></div>
+      <div class="seg" data-s="8"></div>
+      <div class="seg" data-s="9"></div>
     </div>
-    <div id="smeter-label">S0</div>
+    <div id="smeter-labels">
+      <span>S1</span><span>S3</span><span>S5</span><span>S7</span><span>S9</span>
+    </div>
+    <div id="smeter-value">S0 · geen signaal</div>
   </div>
 
   <!-- PTT -->
-  <div class="card">
-    <div class="card-title">Zenden</div>
+  <div class="panel">
+    <div class="panel-label">Zenden</div>
     <button id="ptt-btn">RX</button>
+  </div>
+
+  <!-- Info footer -->
+  <div id="info-panel">
+    <span>PE5JW</span>
+    <span id="last-ts">—</span>
+    <span style="margin-left:auto">BoltWebControl v0.1</span>
   </div>
 </main>
 
-<footer>BoltWebControl — PE5JW · <span id="last-update">—</span></footer>
-
 <script src="/hubs/signalr.min.js"></script>
 <script>
-// ── SignalR verbinding ────────────────────────────────────────────────────
-const dot   = document.getElementById('conn-dot');
-const label = document.getElementById('conn-label');
+// ── Elementen ─────────────────────────────────────────────────────────────
+const hubDot   = document.getElementById('hub-dot');
+const hubLabel = document.getElementById('hub-label');
+const rigDot   = document.getElementById('rig-dot');
+const rigLabel = document.getElementById('rig-label');
 
+// ── SignalR ───────────────────────────────────────────────────────────────
 const conn = new signalR.HubConnectionBuilder()
   .withUrl('/hubs/rig')
-  .withAutomaticReconnect()
+  .withAutomaticReconnect([500, 1000, 2000, 5000])
   .build();
 
-conn.on('RigUpdate', state => updateUI(state));
+conn.on('RigUpdate', state => {
+  setRigStatus(true);
+  updateUI(state);
+});
 
-conn.onreconnecting(() => setConn(false, 'Herverbinden…'));
-conn.onreconnected(() => setConn(true,  'Verbonden'));
-conn.onclose(()      => setConn(false, 'Verbroken'));
+// Server stuurt RigOffline wanneer rigctld niet bereikbaar is
+conn.on('RigOffline', msg => {
+  setRigStatus(false, msg);
+});
 
-function setConn(ok, text) {
-  dot.className = ok ? 'ok' : 'err';
-  label.textContent = text;
+conn.onreconnecting(() => setHubStatus(false, 'Herverbinden…'));
+conn.onreconnected(() => setHubStatus(true,  'Verbonden'));
+conn.onclose(()      => setHubStatus(false, 'Verbroken'));
+
+function setHubStatus(ok, text) {
+  hubDot.className = 'dot ' + (ok ? 'ok' : 'err');
+  hubLabel.textContent = text;
+}
+function setRigStatus(ok, msg) {
+  rigDot.className = 'dot ' + (ok ? 'ok' : 'err');
+  rigLabel.textContent = ok ? 'rigctld verbonden' : ('rigctld: ' + (msg ?? 'offline'));
 }
 
 (async () => {
   try {
     await conn.start();
-    setConn(true, 'Verbonden');
+    setHubStatus(true, 'Verbonden');
+    // Haal direct een status op zodat we meteen weten of rigctld er is
+    try {
+      const r = await fetch('/api/status');
+      if (r.ok) { const s = await r.json(); updateUI(s); setRigStatus(true); }
+      else       { setRigStatus(false, 'niet bereikbaar'); }
+    } catch { setRigStatus(false, 'niet bereikbaar'); }
   } catch(e) {
-    setConn(false, 'Fout: ' + e.message);
+    setHubStatus(false, 'Fout: ' + e.message);
+    setRigStatus(false, '—');
   }
 })();
 
-// ── UI updaten vanuit RigUpdate ──────────────────────────────────────────
+// ── UI updaten ────────────────────────────────────────────────────────────
 function updateUI(s) {
   setFreqDisplay(s.frequencyHz);
   setMode(s.mode);
   setSMeter(s.sMeter);
   setPttDisplay(s.ptt);
-  document.getElementById('last-update').textContent =
-    new Date().toLocaleTimeString('nl-NL');
+  document.getElementById('last-ts').textContent =
+    'Bijgewerkt: ' + new Date().toLocaleTimeString('nl-NL');
 }
 
 function setFreqDisplay(hz) {
   const mhz = Math.floor(hz / 1_000_000);
   const khz = Math.floor((hz % 1_000_000) / 1_000);
   const hzr = hz % 1_000;
-  document.getElementById('freq-mhz').textContent = String(mhz).padStart(2, '0');
-  document.getElementById('freq-khz').textContent = String(khz).padStart(3, '0');
-  document.getElementById('freq-hz').textContent  = String(hzr).padStart(3, '0');
+  document.getElementById('f-mhz').textContent = String(mhz).padStart(2,'0');
+  document.getElementById('f-khz').textContent = String(khz).padStart(3,'0');
+  document.getElementById('f-hz').textContent  = String(hzr).padStart(3,'0');
 }
 
 function setMode(mode) {
-  document.querySelectorAll('.mode-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.mode === mode);
-  });
+  // Normaliseer: rigctld geeft soms "USB\n" of "PKTUSB" terug
+  const m = (mode || '').trim().toUpperCase();
+  document.querySelectorAll('.mode-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.mode === m));
 }
 
+const sMeterText = ['','S1','S2','S3','S4','S5','S6','S7','S8','S9'];
 function setSMeter(s) {
+  const v = Math.max(0, Math.min(9, s));
   document.querySelectorAll('.seg').forEach(seg => {
-    const v = parseInt(seg.dataset.s);
-    seg.classList.toggle('off', v > s);
+    const n = parseInt(seg.dataset.s);
+    seg.className = 'seg' + (n <= v ? ` lit-${n}` : '');
   });
-  document.getElementById('smeter-label').textContent =
-    s === 0 ? 'S0' : (s <= 9 ? `S${s}` : `S9+`);
+  const txt = v === 0 ? 'S0 · geen signaal'
+            : v === 9 ? 'S9 · sterk signaal'
+            : `${sMeterText[v]}`;
+  document.getElementById('smeter-value').textContent = txt;
 }
 
 function setPttDisplay(ptt) {
   const btn = document.getElementById('ptt-btn');
-  btn.textContent = ptt ? 'TX — ZENDEN' : 'RX';
-  btn.classList.toggle('tx', ptt);
+  if (ptt) {
+    btn.textContent = 'TX — ZENDEN';
+    btn.className = 'tx';
+  } else {
+    btn.textContent = 'RX';
+    btn.className = rigOk ? 'rx-ready' : '';
+  }
 }
 
-// ── Frequentie invoer ────────────────────────────────────────────────────
+// ── Frequentie invoer ─────────────────────────────────────────────────────
+let rigOk = false;
 const freqDisplay = document.getElementById('freq-display');
 const freqInput   = document.getElementById('freq-input');
+const freqHint    = document.getElementById('freq-hint');
 
 freqDisplay.addEventListener('click', () => {
   freqDisplay.style.display = 'none';
   freqInput.style.display   = 'block';
-  freqInput.value = '';
+  freqHint.style.display    = 'block';
   freqInput.focus();
 });
 
 freqInput.addEventListener('keydown', async e => {
   if (e.key === 'Enter') {
     const hz = parseInt(freqInput.value);
-    if (hz > 0) await setFreq(hz);
-    closeFreqInput();
+    if (hz >= 1000) await invoke('SetFreq', hz);
+    hideFreqInput();
   } else if (e.key === 'Escape') {
-    closeFreqInput();
+    hideFreqInput();
   }
 });
+freqInput.addEventListener('blur', hideFreqInput);
 
-freqInput.addEventListener('blur', closeFreqInput);
-
-function closeFreqInput() {
+function hideFreqInput() {
   freqInput.style.display   = 'none';
-  freqDisplay.style.display = 'block';
+  freqHint.style.display    = 'none';
+  freqDisplay.style.display = '';
 }
 
-async function setFreq(hz) {
-  try {
-    await conn.invoke('SetFreq', hz);
-  } catch(e) { console.error('SetFreq fout:', e); }
-}
-
-// ── Mode knoppen ─────────────────────────────────────────────────────────
+// ── Mode knoppen ──────────────────────────────────────────────────────────
 document.querySelectorAll('.mode-btn').forEach(btn => {
-  btn.addEventListener('click', async () => {
-    try { await conn.invoke('SetMode', btn.dataset.mode); }
-    catch(e) { console.error('SetMode fout:', e); }
-  });
+  btn.addEventListener('click', () => invoke('SetMode', btn.dataset.mode));
 });
 
-// ── PTT knop ─────────────────────────────────────────────────────────────
+// ── PTT ───────────────────────────────────────────────────────────────────
 let pttState = false;
 document.getElementById('ptt-btn').addEventListener('click', async () => {
   pttState = !pttState;
-  try { await conn.invoke('SetPtt', pttState); }
-  catch(e) { pttState = !pttState; console.error('PTT fout:', e); }
+  try { await invoke('SetPtt', pttState); }
+  catch { pttState = !pttState; }
 });
+
+// ── Helper ────────────────────────────────────────────────────────────────
+async function invoke(method, ...args) {
+  try { await conn.invoke(method, ...args); }
+  catch(e) { console.warn(method, 'mislukt:', e.message); }
+}
 </script>
 </body>
 </html>
